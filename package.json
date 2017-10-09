@@ -1,0 +1,31 @@
+{
+  "name": "linter-patch-errors-singleline",
+  "main": "./lib/index",
+  "version": "0.0.0",
+  "description": "Patches the 'linter' package to make all errors singleline.",
+  "keywords": [],
+  "repository": "https://github.com/lydell/linter-patch-errors-singleline",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "scripts": {
+    "test": "npm run lint && apm test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "flow": "flow",
+    "flow-typed": "flow-typed"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "babel-eslint": "8.0.1",
+    "eslint": "4.8.0",
+    "eslint-config-lydell": "2.0.1",
+    "eslint-plugin-flowtype": "2.39.1",
+    "eslint-plugin-flowtype-errors": "3.3.2",
+    "eslint-plugin-prettier": "2.3.1",
+    "flow-bin": "0.56.0",
+    "flow-typed": "^2.2.0",
+    "prettier": "1.7.4"
+  }
+}
