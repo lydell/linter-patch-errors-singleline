@@ -44,8 +44,8 @@ It makes sense for [linter] to report the full ranges for errors, and leave it u
 
 See [steelbrain/linter-ui-default#398 (comment)][linter-ui-default-issue] and onwards.
 
-[image-after]: images/after.png
-[image-before]: images/before.png
+[image-after]: https://cdn.rawgit.com/lydell/linter-patch-errors-singleline/15c97055/images/after.png
+[image-before]: https://cdn.rawgit.com/lydell/linter-patch-errors-singleline/15c97055/images/before.png
 [linter-ui-default-issue]: https://github.com/steelbrain/linter-ui-default/issues/398#issuecomment-331632791
 [linter-ui-default]: https://github.com/steelbrain/linter-ui-default
 [linter]: https://github.com/steelbrain/linter
