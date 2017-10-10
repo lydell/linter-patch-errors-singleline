@@ -1,23 +1,34 @@
 /* @flow */
 
-import type { TextBuffer } from "../lib/types";
+import type { TextEditor } from "../lib/types";
 
 import singlelineify from "../lib/singlelineify";
 
-function mockTextBuffer(lines: string[]): TextBuffer {
-  return {
-    getTextInRange: () => lines.join("\n"),
-  };
+function mockEditors(
+  mocks: { file: string, lines: string[] }[],
+): Set<TextEditor> {
+  return new Set(
+    mocks.map(({ file, lines }) => ({
+      getPath: () => file,
+      getTextInBufferRange: () => lines.join("\n"),
+    })),
+  );
 }
 
 describe("singlelineify", () => {
   it("works with a simple message", () => {
-    const textBuffer = mockTextBuffer(["line 1", "line 2"]);
+    const editors = mockEditors([
+      {
+        file: "/test/file",
+        lines: ["line 1", "line 2"],
+      },
+    ]);
 
     const messages = [
       {
         version: 2,
         location: {
+          file: "/test/file",
           position: {
             start: { row: 1, column: 1 },
             end: { row: 2, column: 7 },
@@ -26,12 +37,13 @@ describe("singlelineify", () => {
       },
     ];
 
-    singlelineify(messages, textBuffer);
+    singlelineify(messages, editors);
 
     expect(messages).toEqual([
       {
         version: 2,
         location: {
+          file: "/test/file",
           position: {
             start: { row: 1, column: 1 },
             end: { row: 1, column: 7 },
@@ -42,7 +54,70 @@ describe("singlelineify", () => {
   });
 
   it("works with a simple legacy message", () => {
-    const textBuffer = mockTextBuffer(["line 1", "line 2"]);
+    const editors = mockEditors([
+      {
+        file: "/test/file",
+        lines: ["line 1", "line 2"],
+      },
+    ]);
+
+    const messages = [
+      {
+        version: 1,
+        filePath: "/test/file",
+        range: {
+          start: { row: 1, column: 1 },
+          end: { row: 2, column: 7 },
+        },
+      },
+    ];
+
+    singlelineify(messages, editors);
+
+    expect(messages).toEqual([
+      {
+        version: 1,
+        filePath: "/test/file",
+        range: {
+          start: { row: 1, column: 1 },
+          end: { row: 1, column: 7 },
+        },
+      },
+    ]);
+  });
+
+  it("skips a legacy message without a range", () => {
+    const editors = mockEditors([
+      {
+        file: "/test/file",
+        lines: ["line 1", "line 2"],
+      },
+    ]);
+
+    const messages = [
+      {
+        version: 1,
+        filePath: "/test/path",
+      },
+    ];
+
+    singlelineify(messages, editors);
+
+    expect(messages).toEqual([
+      {
+        version: 1,
+        filePath: "/test/path",
+      },
+    ]);
+  });
+
+  it("skips a legacy message without a file", () => {
+    const editors = mockEditors([
+      {
+        file: "/test/file",
+        lines: ["line 1", "line 2"],
+      },
+    ]);
 
     const messages = [
       {
@@ -54,21 +129,26 @@ describe("singlelineify", () => {
       },
     ];
 
-    singlelineify(messages, textBuffer);
+    singlelineify(messages, editors);
 
     expect(messages).toEqual([
       {
         version: 1,
         range: {
           start: { row: 1, column: 1 },
-          end: { row: 1, column: 7 },
+          end: { row: 2, column: 7 },
         },
       },
     ]);
   });
 
-  it("works with a legacy message without a range", () => {
-    const textBuffer = mockTextBuffer(["line 1", "line 2"]);
+  it("skips a legacy message with neither a range nor a filePath", () => {
+    const editors = mockEditors([
+      {
+        file: "/test/file",
+        lines: ["line 1", "line 2"],
+      },
+    ]);
 
     const messages = [
       {
@@ -76,7 +156,7 @@ describe("singlelineify", () => {
       },
     ];
 
-    singlelineify(messages, textBuffer);
+    singlelineify(messages, editors);
 
     expect(messages).toEqual([
       {
@@ -86,12 +166,18 @@ describe("singlelineify", () => {
   });
 
   it("leaves singleline messages unchanged", () => {
-    const textBuffer = mockTextBuffer(["line 1"]);
+    const editors = mockEditors([
+      {
+        file: "/test/file",
+        lines: ["line 1"],
+      },
+    ]);
 
     const messages = [
       {
         version: 2,
         location: {
+          file: "/test/file",
           position: {
             start: { row: 1, column: 1 },
             end: { row: 1, column: 7 },
@@ -100,12 +186,13 @@ describe("singlelineify", () => {
       },
     ];
 
-    singlelineify(messages, textBuffer);
+    singlelineify(messages, editors);
 
     expect(messages).toEqual([
       {
         version: 2,
         location: {
+          file: "/test/file",
           position: {
             start: { row: 1, column: 1 },
             end: { row: 1, column: 7 },
@@ -116,12 +203,18 @@ describe("singlelineify", () => {
   });
 
   it("includes trailing whitespace", () => {
-    const textBuffer = mockTextBuffer(["line 1    ", "line 2"]);
+    const editors = mockEditors([
+      {
+        file: "/test/file",
+        lines: ["line 1    ", "line 2"],
+      },
+    ]);
 
     const messages = [
       {
         version: 2,
         location: {
+          file: "/test/file",
           position: {
             start: { row: 1, column: 1 },
             end: { row: 2, column: 2 },
@@ -130,12 +223,13 @@ describe("singlelineify", () => {
       },
     ];
 
-    singlelineify(messages, textBuffer);
+    singlelineify(messages, editors);
 
     expect(messages).toEqual([
       {
         version: 2,
         location: {
+          file: "/test/file",
           position: {
             start: { row: 1, column: 1 },
             end: { row: 1, column: 11 },
@@ -146,12 +240,18 @@ describe("singlelineify", () => {
   });
 
   it("skips whitespace-only lines", () => {
-    const textBuffer = mockTextBuffer(["", " \t", "new end  ", "old end"]);
+    const editors = mockEditors([
+      {
+        file: "/test/file",
+        lines: ["", " \t", "new end  ", "old end"],
+      },
+    ]);
 
     const messages = [
       {
         version: 2,
         location: {
+          file: "/test/file",
           position: {
             start: { row: 10, column: 20 },
             end: { row: 13, column: 3 },
@@ -160,12 +260,13 @@ describe("singlelineify", () => {
       },
     ];
 
-    singlelineify(messages, textBuffer);
+    singlelineify(messages, editors);
 
     expect(messages).toEqual([
       {
         version: 2,
         location: {
+          file: "/test/file",
           position: {
             start: { row: 10, column: 20 },
             end: { row: 12, column: 10 },
@@ -175,13 +276,14 @@ describe("singlelineify", () => {
     ]);
   });
 
-  it("leaves the messages unchanged if the TextBuffer is missing", () => {
-    const textBuffer = null;
+  it("leaves the messages unchanged if no editors", () => {
+    const editors = mockEditors([]);
 
     const messages = [
       {
         version: 2,
         location: {
+          file: "/test/file",
           position: {
             start: { row: 1, column: 1 },
             end: { row: 2, column: 7 },
@@ -190,15 +292,140 @@ describe("singlelineify", () => {
       },
     ];
 
-    singlelineify(messages, textBuffer);
+    singlelineify(messages, editors);
 
     expect(messages).toEqual([
       {
         version: 2,
         location: {
+          file: "/test/file",
           position: {
             start: { row: 1, column: 1 },
             end: { row: 2, column: 7 },
+          },
+        },
+      },
+    ]);
+  });
+
+  it("leaves the messages unchanged if no matching editors", () => {
+    const editors = mockEditors([
+      {
+        file: "/test/file1",
+        lines: ["line 1", "line 2"],
+      },
+      {
+        file: "/test/file2",
+        lines: ["line 1", "line 2"],
+      },
+    ]);
+
+    const messages = [
+      {
+        version: 2,
+        location: {
+          file: "/test/nope",
+          position: {
+            start: { row: 1, column: 1 },
+            end: { row: 2, column: 7 },
+          },
+        },
+      },
+    ];
+
+    singlelineify(messages, editors);
+
+    expect(messages).toEqual([
+      {
+        version: 2,
+        location: {
+          file: "/test/nope",
+          position: {
+            start: { row: 1, column: 1 },
+            end: { row: 2, column: 7 },
+          },
+        },
+      },
+    ]);
+  });
+
+  it("works with everything at once", () => {
+    const editors = mockEditors([
+      {
+        file: "/test/file1",
+        lines: ["line 1", "line 2"],
+      },
+      {
+        file: "/test/file2",
+        lines: ["", " \t", "line", ""],
+      },
+    ]);
+
+    const messages = [
+      {
+        version: 2,
+        location: {
+          file: "/test/file2",
+          position: {
+            start: { row: 1, column: 1 },
+            end: { row: 4, column: 1 },
+          },
+        },
+      },
+      {
+        version: 1,
+        filePath: "/test/file1",
+        range: {
+          start: { row: 1, column: 1 },
+          end: { row: 2, column: 2 },
+        },
+      },
+      {
+        version: 1,
+      },
+      {
+        version: 2,
+        location: {
+          file: "/test/nope",
+          position: {
+            start: { row: 1, column: 1 },
+            end: { row: 2, column: 2 },
+          },
+        },
+      },
+    ];
+
+    singlelineify(messages, editors);
+
+    expect(messages).toEqual([
+      {
+        version: 2,
+        location: {
+          file: "/test/file2",
+          position: {
+            start: { row: 1, column: 1 },
+            end: { row: 3, column: 5 },
+          },
+        },
+      },
+      {
+        version: 1,
+        filePath: "/test/file1",
+        range: {
+          start: { row: 1, column: 1 },
+          end: { row: 1, column: 7 },
+        },
+      },
+      {
+        version: 1,
+      },
+      {
+        version: 2,
+        location: {
+          file: "/test/nope",
+          position: {
+            start: { row: 1, column: 1 },
+            end: { row: 2, column: 2 },
           },
         },
       },
