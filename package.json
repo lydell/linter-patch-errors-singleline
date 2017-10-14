@@ -1,7 +1,7 @@
 {
   "name": "linter-patch-errors-singleline",
   "main": "./lib/index",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Patches the 'linter' package to make all errors singleline.",
   "keywords": [],
   "repository": "https://github.com/lydell/linter-patch-errors-singleline",
